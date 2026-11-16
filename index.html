@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#172033">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>開運出目</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#182238;--muted:#68738a;--accent:#7657d5;--line:#e5e8f0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+header{background:linear-gradient(135deg,#202b48,#493b79);color:#fff;padding:26px 18px 30px}
+.wrap{max-width:760px;margin:auto;padding:0 16px}h1{margin:0;font-size:28px}header p{margin:7px 0 0;color:#d9d6ec;font-size:14px}
+main{padding:18px 0 40px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;margin:0 0 14px;box-shadow:0 4px 18px #1b28500a}
+h2{font-size:17px;margin:0 0 13px}.fortune{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:#f6f4fc;border-radius:13px;padding:13px}.label{font-size:12px;color:var(--muted)}.value{font-size:20px;font-weight:800;margin-top:4px}
+.colorswatch{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:1px}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+select,input{width:100%;padding:12px;border:1px solid #d8ddea;border-radius:11px;background:#fff;color:var(--ink);font:inherit}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:800;cursor:pointer}
+.primary{background:var(--accent);color:white;width:100%;margin-top:16px}.secondary{background:#f0eef9;color:#51418e}
+#results{display:none}.numbers{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.number{background:#f0eef9;border:1px solid #ddd5f5;border-radius:10px;padding:10px 13px;font-weight:800;font-size:18px}
+.reason{background:#f7f8fb;padding:12px;border-radius:12px;font-size:13px;line-height:1.7}
+.small{font-size:12px;color:var(--muted);line-height:1.6}.notice{font-size:12px;color:#8a5a18;background:#fff8e9;border-radius:11px;padding:11px;line-height:1.6}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:10px}
+@media(max-width:420px){.grid{grid-template-columns:1fr}.value{font-size:18px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>🎯 開運出目</h1><p>今日の運勢・ラッキーカラーから、4競技の買い目候補を組み立てる試作品</p></div></header>
+<main class="wrap">
+<section class="card">
+<h2>今日の開運データ</h2>
+<div class="fortune">
+ <div class="tile"><div class="label">今日の運勢</div><div class="value" id="fortune">—</div></div>
+ <div class="tile"><div class="label">ラッキーナンバー</div><div class="value" id="lucky">—</div></div>
+ <div class="tile"><div class="label">ラッキーカラー</div><div class="value" id="color">—</div></div>
+ <div class="tile"><div class="label">勝負運スコア</div><div class="value" id="score">—</div></div>
+</div><p class="small" id="date"></p><p class="small">誕生日はこの端末のブラウザ内に保存し、運勢と数字の計算にだけ使用します。</p>
+</section>
+<section class="card">
+<h2>買い目を作る</h2>
+<div class="grid">
+ <div><label for="birthday">あなたの誕生日</label><input id="birthday" type="date" autocomplete="bday"></div>
+ <div><label for="sport">競技</label><select id="sport"><option value="horse">競馬</option><option value="keirin">競輪</option><option value="boat">競艇</option><option value="auto">オートレース</option></select></div>
+ <div><label for="count">出走頭数・車数</label><select id="count"></select></div>
+ <div><label for="bet">券種</label><select id="bet"><option>3連単</option><option>3連複</option><option>2連単</option><option>2連複</option><option>単勝</option><option>複勝</option></select></div>
+ <div><label for="style">選び方</label><select id="style"><option value="balanced">バランス型</option><option value="steady">堅実型</option><option value="bold">穴狙い型</option><option value="lucky">開運重視型</option></select></div>
+</div>
+<button class="primary" id="generate">✨ 開運買い目を生成</button>
+<p class="small">数字の並びは独自の開運ルールで決定します。競走能力・オッズ・展開予想を評価するものではありません。</p>
+</section>
+<section class="card" id="results">
+<h2>今回の買い目候補</h2>
+<div class="label" id="summary"></div>
+<div class="numbers" id="tickets"></div>
+<div class="reason" id="reason"></div>
+<button class="secondary" id="copy">買い目をコピー</button>
+</section>
+<div class="notice">このアプリは娯楽用の数字選び支援です。運勢とレース結果に因果関係はなく、的中や利益を保証しません。無理のない範囲で楽しみ、購入予算を先に決めてください。</div>
+</main>
+<div class="wrap" style="padding-bottom:18px"><button class="secondary" id="installApp" style="width:100%;display:none">📲 ホーム画面に追加</button><p class="small" id="installHelp" style="text-align:center">インストール対応ブラウザでは、メニューから「アプリをインストール」または「ホーム画面に追加」を選べます。</p></div>
+<footer>開運出目 試作品 v0.3 · データは端末内で計算します</footer>
+<script>
+const $=id=>document.getElementById(id);
+const colorTable=[
+ {name:"赤",hex:"#d94b52",nums:[1,6]},
+ {name:"青",hex:"#3978c6",nums:[2,7]},
+ {name:"黄",hex:"#d6a52d",nums:[3,8]},
+ {name:"緑",hex:"#32966c",nums:[4,9]},
+ {name:"白",hex:"#aab2c0",nums:[5,10]}
+];
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function todayData(){
+ const d=new Date(), key=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+ const birthday=$("birthday")?.value || "";
+ const h=hash("kaiun-"+key+"|birthday:"+birthday);
+ const c=colorTable[h%colorTable.length], luck=(h>>>5)%10+1;
+ const fortunes=["小吉","中吉","吉","中吉","大吉"];
+ const fortune=fortunes[(h>>>9)%fortunes.length];
+ $("fortune").textContent=fortune;$("lucky").textContent=luck+"・"+((luck+3-1)%10+1);
+ $("color").innerHTML=`<span class="colorswatch" style="background:${c.hex}"></span>${c.name}色`;
+ $("score").textContent=(h%41+60)+"/100";$("date").textContent=key+" の開運データ"+(birthday?"（誕生日を反映）":"（誕生日未設定）");
+ return {h,c,luck,fortune,key,score:h%41+60,birthday};
+}
+const limits={horse:[5,6,7,8,9,10,11,12,13,14,15,16,17,18],keirin:[7,9],boat:[6],auto:[6,7,8]};
+function updateCounts(){const s=$("sport").value; $("count").innerHTML=limits[s].map(n=>`<option value="${n}">${n}${s==="horse"?"頭":"車"}</option>`).join("");}
+$("sport").addEventListener("change",updateCounts);updateCounts();
+let latest="";
+function generate(){
+ const data=todayData(),s=$("sport").value,n=+$("count").value,bet=$("bet").value,style=$("style").value;
+ const h=hash(data.key+"|"+(data.birthday||"") +"|"+s+"|"+n+"|"+bet+"|"+style), colorNums=data.c.nums.filter(x=>x<=n);
+ let pool=Array.from({length:n},(_,i)=>i+1);
+ // Weighted deterministic ranking: lucky number, color mapping, then date/sport-specific hash.
+ const rank=pool.map(x=>({x,weight:(x===data.luck?100:0)+(colorNums.includes(x)?45:0)+((hash(h+"-"+x)%100)/100)}));
+ rank.sort((a,b)=>b.weight-a.weight);
+ if(style==="steady")rank.sort((a,b)=>((a.x===1?1:0)+(a.x===data.luck?0.5:0))-((b.x===1?1:0)+(b.x===data.luck?0.5:0)) || b.weight-a.weight);
+ if(style==="bold")rank.reverse();
+ const ordered=rank.map(x=>x.x);
+ const isOrdered=["3連単","2連単"].includes(bet), k=bet.includes("3")?3:(bet.includes("2")?2:1);
+ const combinations=[];
+ function walk(arr,remaining){
+   if(arr.length===k){combinations.push(arr.slice());return}
+   for(const x of remaining){if(isOrdered||!arr.includes(x)){walk([...arr,x],isOrdered?remaining.filter(y=>y!==x):remaining.filter(y=>y>x));}}
+ }
+ walk([],ordered);
+ // Keep a compact set of suggestions, rotating through the ranked candidate pool.
+ let chosen=combinations.filter(c=>c.some(x=>x===data.luck)||c.some(x=>colorNums.includes(x)));
+ if(style==="steady")chosen=combinations.filter(c=>c.includes(1)||c.includes(data.luck));
+ if(style==="bold")chosen=combinations.slice().reverse().filter(c=>c.some(x=>x===n)||c.some(x=>x===data.luck));
+ if(style==="lucky")chosen=combinations.filter(c=>c.includes(data.luck)&&c.some(x=>colorNums.includes(x)));
+ if(!chosen.length)chosen=combinations;
+ const offset=h%Math.max(1,chosen.length);
+ chosen=[chosen[offset]];
+ const fmt=c=>c.join("-");
+ latest=chosen.map(fmt).join("\n");
+ $("summary").textContent=`${$("sport").selectedOptions[0].textContent}・${n}${s==="horse"?"頭":"車"}・${bet}・${$("style").selectedOptions[0].textContent}`;
+ $("tickets").innerHTML=chosen.map(c=>`<span class="number">${fmt(c)}</span>`).join("");
+ $("reason").innerHTML=`<b>選定理由</b><br>・今日のラッキーナンバー：${data.luck}<br>・ラッキーカラー：${data.c.name}（対応数字 ${data.c.nums.join("・")}）<br>・${$("style").selectedOptions[0].textContent}のルールで候補を抽出<br>・日付、誕生日、競技、出走数、券種を使って1点を決定<br><br><span class="small">同じ日・同じ誕生日・同じ設定なら同じ候補になります。これは占い風の娯楽ロジックであり、予測モデルではありません。</span>`;
+ $("results").style.display="block";
+}
+const birthdayInput=$("birthday");
+birthdayInput.value=localStorage.getItem("kaiun-birthday")||"";
+birthdayInput.addEventListener("change",()=>{if(birthdayInput.value)localStorage.setItem("kaiun-birthday",birthdayInput.value);else localStorage.removeItem("kaiun-birthday");todayData();$("results").style.display="none";});
+$("generate").addEventListener("click",generate);
+$("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(latest);$("copy").textContent="コピーしました"}catch(e){$("copy").textContent="コピーできませんでした"}});
+todayData();
+// ホーム画面へのインストール（対応ブラウザのみ）
+let installPrompt;
+const installButton = $("installApp");
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  installButton.style.display = "block";
+});
+installButton?.addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = null;
+  installButton.style.display = "none";
+});
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body></html>
